@@ -344,7 +344,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Credits
 
 - **OpenAI Whisper** - Speech recognition model
-- **Anthropic Claude** - Development assistance
 - **Astral** - uv package manager
 - All the amazing open-source contributors
 
