@@ -45,6 +45,10 @@ Thumbs.db
 temp_audio.wav
 *.wav
 *.mp3
+ffmpeg.exe
+
+# Windows shortcuts
+*.lnk
 
 # Environment variables
 .env

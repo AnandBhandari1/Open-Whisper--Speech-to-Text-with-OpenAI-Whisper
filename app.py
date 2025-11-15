@@ -1,10 +1,10 @@
 import customtkinter as ctk
 import sounddevice as sd
-import whisper  # Using openai-whisper instead of faster-whisper
 import threading
 import numpy as np
 import wave
 import os
+import sys
 import torch
 import time
 # import language_tool_python  # DISABLED - Grammar correction temporarily disabled
@@ -15,6 +15,34 @@ from pynput.keyboard import Key
 from collections import deque
 import random
 import re
+
+# Configure ffmpeg path for whisper (use local bundled version)
+try:
+    import imageio_ffmpeg
+    import shutil
+
+    ffmpeg_bundled = imageio_ffmpeg.get_ffmpeg_exe()
+
+    # Create a local copy named ffmpeg.exe if it doesn't exist
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    ffmpeg_local = os.path.join(script_dir, "ffmpeg.exe")
+
+    if not os.path.exists(ffmpeg_local):
+        print("Creating local ffmpeg.exe copy...")
+        shutil.copy2(ffmpeg_bundled, ffmpeg_local)
+
+    # Add local directory to PATH so whisper can find ffmpeg.exe
+    if script_dir not in os.environ["PATH"]:
+        os.environ["PATH"] = script_dir + os.pathsep + os.environ["PATH"]
+
+    print(f"[OK] Using bundled ffmpeg: {ffmpeg_local}")
+except ImportError:
+    print("[WARNING] imageio-ffmpeg not found, using system ffmpeg")
+except Exception as e:
+    print(f"[WARNING] Error setting up bundled ffmpeg: {e}")
+    print("  Falling back to system ffmpeg")
+
+import whisper  # Import after setting up ffmpeg
 
 class SimpleApp(ctk.CTk):
     def __init__(self):
@@ -66,7 +94,7 @@ class SimpleApp(ctk.CTk):
         # Record button
         self.record_button = ctk.CTkButton(
             self.main_frame,
-            text="🎤 Record",
+            text="Record",
             command=self.toggle_recording,
             font=ctk.CTkFont(size=16, weight="bold"),
             height=40,
@@ -219,10 +247,10 @@ class SimpleApp(ctk.CTk):
             is_wayland = session_type == 'wayland' or wayland_display != ''
             
             if is_wayland:
-                print("🔧 Detected Wayland session - setting up Wayland-compatible hotkey")
+                print("[INFO] Detected Wayland session - setting up Wayland-compatible hotkey")
                 self.setup_wayland_hotkey()
             else:
-                print("🔧 Detected X11 session - using standard hotkey method")
+                print("[INFO] Detected X11 session - using standard hotkey method")
                 self.setup_x11_hotkey()
                 
         except Exception as e:
@@ -235,7 +263,7 @@ class SimpleApp(ctk.CTk):
             import subprocess
             import threading
             
-            print("🔧 Setting up Wayland hotkey using system integration...")
+            print("[INFO] Setting up Wayland hotkey using system integration...")
             
             # Create a script that will be called by the system shortcut
             script_path = "/tmp/faststt_toggle.py"
@@ -302,14 +330,14 @@ except Exception as e:
                 sock.bind(socket_path)
                 sock.listen(1)
                 
-                print("✅ Socket server listening for hotkey signals")
+                print("[OK] Socket server listening for hotkey signals")
                 
                 while True:
                     try:
                         conn, addr = sock.accept()
                         data = conn.recv(1024)
                         if data == b"toggle":
-                            print("🎯 Hotkey signal received via socket!")
+                            print("[F8] Hotkey signal received via socket!")
                             self.after_idle(self.toggle_recording)
                         conn.close()
                     except Exception as e:
@@ -367,7 +395,7 @@ except Exception as e:
                     "gsettings", "set", "org.gnome.settings-daemon.plugins.media-keys", "custom-keybindings", new_bindings
                 ], check=True)
             
-            print("✅ GNOME keyboard shortcut set up successfully!")
+            print("[OK] GNOME keyboard shortcut set up successfully!")
             print(f"   F8 key will now toggle recording globally")
             
         except subprocess.CalledProcessError as e:
@@ -397,7 +425,7 @@ except Exception as e:
             def on_press(key):
                 try:
                     if key == Key.f8:
-                        print("🎯 F8 hotkey detected!")
+                        print("[F8] F8 hotkey detected!")
                         self.after_idle(self.toggle_recording)
                 except Exception as e:
                     print(f"Hotkey error: {e}")
@@ -413,11 +441,11 @@ except Exception as e:
             )
             self.keyboard_listener.start()
             
-            print("✅ X11 global hotkey listener started")
+            print("[OK] X11 global hotkey listener started")
             if self.keyboard_listener.running:
-                print("✅ Hotkey listener is running successfully")
+                print("[OK] Hotkey listener is running successfully")
             else:
-                print("⚠️ Hotkey listener failed to start")
+                print("[WARNING] Hotkey listener failed to start")
                 
         except Exception as e:
             print(f"❌ Failed to start X11 keyboard listener: {e}")
@@ -432,7 +460,7 @@ except Exception as e:
             def on_press(key):
                 try:
                     if key == Key.f8:
-                        print("🎯 F8 hotkey detected (app-focused only)!")
+                        print("[F8] F8 hotkey detected (app-focused only)!")
                         self.after_idle(self.toggle_recording)
                 except Exception as e:
                     print(f"Hotkey error: {e}")
@@ -443,7 +471,7 @@ except Exception as e:
             )
             self.keyboard_listener.start()
             
-            print("✅ Fallback hotkey active (works when app is focused)")
+            print("[OK] Fallback hotkey active (works when app is focused)")
             
         except Exception as e:
             print(f"❌ Even fallback hotkey failed: {e}")
@@ -466,19 +494,19 @@ except Exception as e:
             # Determine device
             if force_cpu:
                 device = "cpu"
-                print("⚠️ FORCE_CPU=1 - Using CPU mode")
+                print("[WARNING] FORCE_CPU=1 - Using CPU mode")
             elif torch.cuda.is_available():
                 device = "cuda"
                 print("🔍 CUDA available - attempting GPU mode...")
             else:
                 device = "cpu"
-                print("⚠️ CUDA not available - using CPU mode")
+                print("[WARNING] CUDA not available - using CPU mode")
 
             # Load model with openai-whisper (simpler API)
             print(f"Loading {self.model_name} on {device.upper()}...")
             self.model = whisper.load_model(self.model_name, device=device)
             self.device_used = device.upper()
-            print(f"✅ Model loaded successfully on {self.device_used}")
+            print(f"[OK] Model loaded successfully on {self.device_used}")
 
             if device == "cuda":
                 gpu_name = torch.cuda.get_device_name(0)
@@ -498,7 +526,7 @@ except Exception as e:
     def init_grammar_tool(self):
         """Initialize grammar correction tool (DISABLED - Not in use)"""
         # DISABLED - Grammar correction temporarily disabled
-        print("⚠️ Grammar correction is disabled")
+        print("[WARNING] Grammar correction is disabled")
         self.grammar_correction = False
         self.grammar_tool = None
         return
@@ -560,7 +588,7 @@ except Exception as e:
         
         # Update button
         self.record_button.configure(
-            text="🎤 Record",
+            text="Record",
             fg_color=["#3B8ED0", "#1F6AA5"],
             hover_color=["#36719F", "#144870"]
         )
@@ -580,7 +608,7 @@ except Exception as e:
     
     def record_audio(self):
         """Record audio from microphone"""
-        print("🎧 Starting audio recording...")
+        print("[REC] Starting audio recording...")
         try:
             with sd.InputStream(samplerate=self.samplerate, channels=self.channels, dtype='int16') as stream:
                 while self.is_recording:
@@ -616,19 +644,19 @@ except Exception as e:
                 wf.writeframes(audio_data.tobytes())
             
             # Transcribe with openai-whisper
-            print("🎯 Starting transcription...")
+            print("[TRANSCRIBE] Starting transcription...")
             self.after(0, lambda: self.status_label.configure(text="Transcribing...", text_color="yellow"))
 
             result = self.model.transcribe(self.temp_wav_file, fp16=(self.device_used == "CUDA"))
 
             transcription = result["text"].strip()
-            print(f"🎤 Transcribed: '{transcription}'")
+            print(f"[TEXT] Transcribed: '{transcription}'")
             
             if transcription:
                 # Add punctuation first
                 self.after(0, lambda: self.status_label.configure(text="Adding punctuation...", text_color="cyan"))
                 punctuated_text = self.add_punctuation(transcription)
-                print(f"📝 Punctuated: {punctuated_text}")
+                print(f"[TEXT] Punctuated: {punctuated_text}")
 
                 # DISABLED - Grammar correction (skip this step)
                 # if self.grammar_correction and self.grammar_tool:
@@ -703,7 +731,7 @@ except Exception as e:
             pyautogui.typewrite(text, interval=0.001)
             
             self.status_label.configure(text="Inserted!", text_color="green")
-            print(f"✅ Inserted: {text} (also copied to clipboard)")
+            print(f"[OK] Inserted: {text} (also copied to clipboard)")
             
             # Reset status after 2 seconds
             self.after(2000, lambda: self.status_label.configure(
@@ -725,7 +753,7 @@ except Exception as e:
                     pyautogui.hotkey('ctrl', 'shift', 'v')
                 
                 self.status_label.configure(text="Inserted!", text_color="green")
-                print(f"✅ Inserted via clipboard: {text}")
+                print(f"[OK] Inserted via clipboard: {text}")
                 
                 self.after(2000, lambda: self.status_label.configure(
                     text=f"Ready • {self.device_used}", 
