@@ -35,7 +35,7 @@ A lightweight, GPU-accelerated speech recognition application that transcribes y
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/fast_simple.git
+   git clone https://github.com/AnandBhandari1/fast_simple.git
    cd fast_simple
    ```
 
@@ -357,15 +357,14 @@ If you find this project useful, please consider giving it a star! ⭐
 
 ## 📬 Contact
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/fast_simple/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/fast_simple/discussions)
+- **Issues**: [GitHub Issues](https://github.com/AnandBhandari1/fast_simple/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/AnandBhandari1/fast_simple/discussions)
 
 ---
 
 <div align="center">
 
-**Made with ❤️ using OpenAI Whisper**
 
-[Report Bug](https://github.com/yourusername/fast_simple/issues) · [Request Feature](https://github.com/yourusername/fast_simple/issues)
+[Report Bug](https://github.com/AnandBhandari1/fast_simple/issues) · [Request Feature](https://github.com/AnandBhandari1/fast_simple/issues)
 
 </div>
