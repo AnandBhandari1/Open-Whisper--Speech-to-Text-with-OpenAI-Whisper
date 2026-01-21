@@ -1,4 +1,4 @@
-# FastSimple 🎤
+# WhisperTalk 🎤
 
 **Simple, Fast Speech-to-Text with OpenAI Whisper**
 
