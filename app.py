@@ -765,6 +765,9 @@ except Exception as e:
             else:
                 text += "."
 
+        # Add space at the end for next sentence
+        text += " "
+
         # Capitalize first letter
         if text:
             text = text[0].upper() + text[1:]
