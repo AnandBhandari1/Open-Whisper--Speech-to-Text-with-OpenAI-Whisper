@@ -38,7 +38,7 @@ except Exception as e:
 import whisper  # Import after setting up ffmpeg
 
 
-class SimpleApp(ctk.CTk):
+class GrammarApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
@@ -98,18 +98,18 @@ class SimpleApp(ctk.CTk):
         # Status label
         self.status_label = ctk.CTkLabel(
             self.main_frame,
-            text="Ready",
-            font=ctk.CTkFont(size=11),
+            text="Checking Ollama...",
+            font=ctk.CTkFont(size=10),
             text_color="#888888",
         )
-        self.status_label.place(x=70, y=15)
+        self.status_label.place(x=70, y=12)
 
         # Mode label
         self.mode_label = ctk.CTkLabel(
             self.main_frame,
-            text="Original Only",
+            text="Grammar: ON",
             font=ctk.CTkFont(size=10),
-            text_color="#4CAF50",
+            text_color="#03A9F4",
         )
         self.mode_label.place(x=70, y=38)
 
@@ -126,6 +126,11 @@ class SimpleApp(ctk.CTk):
         self.model_name = "large-v3-turbo"
         self.model = None
         self.device_used = "CPU"
+
+        # Ollama settings
+        self.ollama_model = os.environ.get("OLLAMA_MODEL", "gemma3:latest")
+        self.ollama_host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+        self.ollama_available = False
 
         # Hotkey
         self.hotkey = Key.f8
@@ -172,7 +177,7 @@ try:
     sock.send(b"toggle")
     sock.close()
 except Exception as e:
-    os.system("cd {os.getcwd()} && uv run python app.py &")
+    os.system("cd {os.getcwd()} && uv run python app_with_grammer.py &")
 """
             with open(script_path, "w") as f:
                 f.write(script_content)
@@ -259,10 +264,41 @@ except Exception as e:
             if device == "cuda":
                 print(f"   GPU: {torch.cuda.get_device_name(0)}")
 
-            self.after(0, lambda: self.status_label.configure(text="Ready ✓"))
+            threading.Thread(target=self.init_ollama, daemon=True).start()
         except Exception as e:
             print(f"❌ Error loading model: {e}")
-            self.after(0, lambda: self.status_label.configure(text="Error!", text_color="#FF1744"))
+            self.after(0, lambda: self.status_label.configure(text="Model Error!", text_color="#FF1744"))
+
+    def init_ollama(self):
+        """Initialize Ollama connection"""
+        try:
+            import ollama
+            print(f"🔧 Checking Ollama at {self.ollama_host}...")
+
+            client = ollama.Client(host=self.ollama_host)
+            models = client.list()
+            model_names = [m.model for m in models.models] if models.models else []
+
+            if self.ollama_model in model_names:
+                print(f"[OK] Model '{self.ollama_model}' is available")
+                self.ollama_available = True
+                self.after(0, lambda: [
+                    self.status_label.configure(text="Ready ✓", text_color="#888888"),
+                    self.mode_label.configure(text="Grammar: ON", text_color="#03A9F4"),
+                ])
+            else:
+                print(f"[WARNING] Model '{self.ollama_model}' not found")
+                self.after(0, lambda: [
+                    self.status_label.configure(text="No Model", text_color="#FF9800"),
+                    self.mode_label.configure(text="Punct. Only", text_color="#FF9800"),
+                ])
+        except Exception as e:
+            print(f"[WARNING] Ollama not available: {e}")
+            self.ollama_available = False
+            self.after(0, lambda: [
+                self.status_label.configure(text="No Ollama", text_color="#FF9800"),
+                self.mode_label.configure(text="Punct. Only", text_color="#FF9800"),
+            ])
 
     def toggle_recording(self):
         """Toggle recording state"""
@@ -323,7 +359,7 @@ except Exception as e:
             time.sleep(0.05)
 
     def process_audio(self):
-        """Process recorded audio"""
+        """Process recorded audio with grammar correction"""
         if not self.audio_frames:
             return
 
@@ -343,8 +379,15 @@ except Exception as e:
             print(f"[TEXT] Raw: '{transcription}'")
 
             if transcription:
-                final_text = self.add_punctuation(transcription)
-                print(f"[TEXT] Final: {final_text}")
+                punctuated = self.add_punctuation(transcription)
+                
+                if self.ollama_available:
+                    final_text = self.correct_grammar(punctuated)
+                    print(f"[TEXT] Grammar corrected: {final_text}")
+                else:
+                    final_text = punctuated
+                    print(f"[TEXT] Punctuated: {final_text}")
+                
                 self.insert_text(final_text)
             else:
                 self.record_button.configure(text="🎙", fg_color="#6200EE")
@@ -377,6 +420,50 @@ except Exception as e:
         text = re.sub(r"\s+([.!?])", r"\1", text)
         text = re.sub(r"([.!?])([A-Za-z])", r"\1 \2", text)
         return text
+
+    def correct_grammar(self, text):
+        """Apply grammar correction using Ollama"""
+        try:
+            import ollama
+
+            system_prompt = """You are a professional transcription editor. Clean up transcribed speech by fixing grammar, removing filler words, and simplifying while keeping the core meaning.
+
+Rules:
+1. Remove filler words: um, uh, like, you know, I mean, basically, actually, literally, so, well, right, okay
+2. Fix grammar and spelling errors
+3. Add proper punctuation where needed
+4. Simplify the text - make it concise and straightforward
+5. Remove redundant or repetitive phrases
+6. Keep the original meaning intact
+7. Do not add explanations or comments
+8. Output ONLY the cleaned text, nothing else
+
+Example:
+Input: "Um, so like I was thinking that maybe we should uh go to the store"
+Output: "We should go to the store."""
+
+            print(f"[GRAMMAR] Sending to Ollama...")
+            client = ollama.Client(host=self.ollama_host)
+            response = client.chat(
+                model=self.ollama_model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Text to correct:\n\n{text}"},
+                ],
+                options={
+                    "temperature": 0.1,
+                    "num_predict": 200,
+                },
+            )
+
+            result = response.message.content.strip()
+            result = re.sub(r'^["\']+|["\']+$', '', result)
+            result = result.strip()
+            return result if result else text
+
+        except Exception as e:
+            print(f"[WARNING] Grammar correction failed: {e}")
+            return text
 
     def insert_text(self, text):
         """Insert text at cursor"""
@@ -417,6 +504,6 @@ except Exception as e:
 
 
 if __name__ == "__main__":
-    app = SimpleApp()
+    app = GrammarApp()
     app.protocol("WM_DELETE_WINDOW", app.on_closing)
     app.mainloop()

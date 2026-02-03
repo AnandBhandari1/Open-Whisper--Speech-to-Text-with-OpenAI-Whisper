@@ -38,7 +38,7 @@ except Exception as e:
 import whisper  # Import after setting up ffmpeg
 
 
-class SimpleApp(ctk.CTk):
+class SettingsApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
@@ -73,8 +73,8 @@ class SimpleApp(ctk.CTk):
             self,
             width=self.window_width,
             height=self.window_height,
-            fg_color="#1E1E1E",
-            corner_radius=0,
+            fg_color="#1E1E1E",  # Dark gray background
+            corner_radius=0,  # Square corners
             border_width=1,
             border_color="#333333",
         )
@@ -88,30 +88,43 @@ class SimpleApp(ctk.CTk):
             font=ctk.CTkFont(size=18),
             width=50,
             height=50,
-            corner_radius=0,
+            corner_radius=0,  # Square corners
             fg_color="#6200EE",
             hover_color="#3700B3",
             text_color="white",
         )
         self.record_button.place(x=10, y=10)
 
-        # Status label
-        self.status_label = ctk.CTkLabel(
+        # Tone dropdown label
+        self.tone_label = ctk.CTkLabel(
             self.main_frame,
-            text="Ready",
-            font=ctk.CTkFont(size=11),
+            text="Tone:",
+            font=ctk.CTkFont(size=10),
             text_color="#888888",
         )
-        self.status_label.place(x=70, y=15)
+        self.tone_label.place(x=70, y=12)
 
-        # Mode label
-        self.mode_label = ctk.CTkLabel(
+        # Tone dropdown - expanded options
+        self.tone_options = ["Original", "Grammar", "Professional", "Polite", "Rephrase"]
+        self.tone_var = ctk.StringVar(value="Original")
+        self.tone_dropdown = ctk.CTkOptionMenu(
             self.main_frame,
-            text="Original Only",
-            font=ctk.CTkFont(size=10),
-            text_color="#4CAF50",
+            values=self.tone_options,
+            variable=self.tone_var,
+            command=self.on_tone_change,
+            width=95,
+            height=28,
+            corner_radius=0,  # Square corners
+            font=ctk.CTkFont(size=11),
+            dropdown_font=ctk.CTkFont(size=11),
+            fg_color="#333333",
+            button_color="#444444",
+            button_hover_color="#555555",
+            dropdown_fg_color="#333333",
+            dropdown_hover_color="#444444",
+            dropdown_text_color="white",
         )
-        self.mode_label.place(x=70, y=38)
+        self.tone_dropdown.place(x=70, y=30)
 
         # Recording state
         self.is_recording = False
@@ -126,6 +139,25 @@ class SimpleApp(ctk.CTk):
         self.model_name = "large-v3-turbo"
         self.model = None
         self.device_used = "CPU"
+
+        # Current tone
+        self.current_tone = "original"
+        self.tone_colors = {
+            "original": "#4CAF50",
+            "grammar": "#2196F3",
+            "professional": "#6200EE",
+            "polite": "#E91E63",
+            "rephrase": "#FF9800",
+        }
+
+        # Ollama settings
+        self.ollama_model = os.environ.get("OLLAMA_MODEL", "gemma3:latest")
+        self.ollama_host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+        self.ollama_available = False
+
+        # LanguageTool settings (fast local grammar)
+        self.language_tool = None
+        self.language_tool_available = False
 
         # Hotkey
         self.hotkey = Key.f8
@@ -142,6 +174,12 @@ class SimpleApp(ctk.CTk):
         x = self.winfo_pointerx() - self.offset_x
         y = self.winfo_pointery() - self.offset_y
         self.geometry(f"+{x}+{y}")
+
+    def on_tone_change(self, choice):
+        """Handle tone dropdown change"""
+        self.current_tone = choice.lower()
+        color = self.tone_colors[self.current_tone]
+        print(f"[TONE] Changed to: {choice} ({color})")
 
     def setup_global_hotkey(self):
         """Set up global hotkey"""
@@ -172,7 +210,7 @@ try:
     sock.send(b"toggle")
     sock.close()
 except Exception as e:
-    os.system("cd {os.getcwd()} && uv run python app.py &")
+    os.system("cd {os.getcwd()} && uv run python app_with_settings.py &")
 """
             with open(script_path, "w") as f:
                 f.write(script_content)
@@ -259,10 +297,49 @@ except Exception as e:
             if device == "cuda":
                 print(f"   GPU: {torch.cuda.get_device_name(0)}")
 
-            self.after(0, lambda: self.status_label.configure(text="Ready ✓"))
+            threading.Thread(target=self.init_ollama, daemon=True).start()
+            threading.Thread(target=self.init_language_tool, daemon=True).start()
         except Exception as e:
             print(f"❌ Error loading model: {e}")
-            self.after(0, lambda: self.status_label.configure(text="Error!", text_color="#FF1744"))
+
+    def init_ollama(self):
+        """Initialize Ollama connection"""
+        try:
+            import ollama
+            print(f"🔧 Checking Ollama at {self.ollama_host}...")
+
+            client = ollama.Client(host=self.ollama_host)
+            models = client.list()
+            model_names = [m.model for m in models.models] if models.models else []
+
+            if self.ollama_model in model_names:
+                print(f"[OK] Model '{self.ollama_model}' is available")
+                self.ollama_available = True
+            else:
+                print(f"[WARNING] Model '{self.ollama_model}' not found")
+                print(f"   Available: {', '.join(model_names[:5])}")
+                for fallback in ["gemma3:latest", "llama3.2:3b", "gemma2:2b"]:
+                    if fallback in model_names:
+                        self.ollama_model = fallback
+                        print(f"   Using fallback: {fallback}")
+                        self.ollama_available = True
+                        break
+        except Exception as e:
+            print(f"[WARNING] Ollama not available: {e}")
+            self.ollama_available = False
+
+    def init_language_tool(self):
+        """Initialize LanguageTool for fast local grammar correction"""
+        try:
+            import language_tool_python
+            print("🔧 Initializing LanguageTool...")
+            self.language_tool = language_tool_python.LanguageTool('en-US')
+            self.language_tool_available = True
+            print("[OK] LanguageTool ready (fast grammar correction)")
+        except Exception as e:
+            print(f"[WARNING] LanguageTool not available: {e}")
+            print("   Grammar tone will use fallback")
+            self.language_tool_available = False
 
     def toggle_recording(self):
         """Toggle recording state"""
@@ -282,7 +359,6 @@ except Exception as e:
             fg_color="#FF1744",
             hover_color="#D50000",
         )
-        self.status_label.configure(text="Recording...", text_color="#FF1744")
         self.audio_frames = []
         self.last_levels.clear()
         self.recording_thread = threading.Thread(target=self.record_audio)
@@ -298,7 +374,6 @@ except Exception as e:
             fg_color="#6200EE",
             hover_color="#3700B3",
         )
-        self.status_label.configure(text="Processing...", text_color="#FF9800")
         if hasattr(self, "recording_thread"):
             self.recording_thread.join()
         threading.Thread(target=self.process_audio, daemon=True).start()
@@ -323,11 +398,14 @@ except Exception as e:
             time.sleep(0.05)
 
     def process_audio(self):
-        """Process recorded audio"""
+        """Process recorded audio with selected tone"""
         if not self.audio_frames:
             return
 
         try:
+            self.record_button.configure(text="⏳", fg_color="#FF9800")
+            self.update()
+
             audio_data = np.concatenate(self.audio_frames, axis=0)
             with wave.open(self.temp_wav_file, "wb") as wf:
                 wf.setnchannels(self.channels)
@@ -335,7 +413,7 @@ except Exception as e:
                 wf.setframerate(self.samplerate)
                 wf.writeframes(audio_data.tobytes())
 
-            print("[TRANSCRIBE] Starting transcription...")
+            print(f"[TRANSCRIBE] Tone: {self.current_tone.upper()}")
             result = self.model.transcribe(
                 self.temp_wav_file, fp16=(self.device_used == "CUDA")
             )
@@ -343,17 +421,31 @@ except Exception as e:
             print(f"[TEXT] Raw: '{transcription}'")
 
             if transcription:
-                final_text = self.add_punctuation(transcription)
-                print(f"[TEXT] Final: {final_text}")
+                if self.current_tone == "original":
+                    final_text = self.add_punctuation(transcription)
+                    print(f"[TEXT] Original: {final_text}")
+                elif self.current_tone == "grammar":
+                    final_text = self.process_grammar(transcription)
+                    print(f"[TEXT] Grammar: {final_text}")
+                elif self.ollama_available:
+                    if self.current_tone == "professional":
+                        final_text = self.process_professional(transcription)
+                    elif self.current_tone == "polite":
+                        final_text = self.process_polite(transcription)
+                    else:  # rephrase
+                        final_text = self.process_rephrase(transcription)
+                    print(f"[TEXT] {self.current_tone.capitalize()}: {final_text}")
+                else:
+                    final_text = self.add_punctuation(transcription)
+                    print("[WARNING] Ollama not available, using original mode")
+
                 self.insert_text(final_text)
             else:
                 self.record_button.configure(text="🎙", fg_color="#6200EE")
-                self.status_label.configure(text="Ready", text_color="#888888")
 
         except Exception as e:
             print(f"Processing error: {e}")
             self.record_button.configure(text="❌", fg_color="#6200EE")
-            self.status_label.configure(text="Error!", text_color="#FF1744")
         finally:
             if os.path.exists(self.temp_wav_file):
                 os.remove(self.temp_wav_file)
@@ -378,20 +470,146 @@ except Exception as e:
         text = re.sub(r"([.!?])([A-Za-z])", r"\1 \2", text)
         return text
 
+    def process_professional(self, text):
+        """Process text with professional tone"""
+        punctuated = self.add_punctuation(text)
+        return self.call_ollama(punctuated, "professional")
+
+    def process_polite(self, text):
+        """Process text with polite tone"""
+        punctuated = self.add_punctuation(text)
+        return self.call_ollama(punctuated, "polite")
+
+    def process_grammar(self, text):
+        """Process text with fast grammar correction using LanguageTool"""
+        punctuated = self.add_punctuation(text)
+        
+        if not self.language_tool_available:
+            print("[WARNING] LanguageTool not available, using punctuation only")
+            return punctuated
+        
+        try:
+            print("[GRAMMAR] Using LanguageTool...")
+            matches = self.language_tool.check(punctuated)
+            corrected = self.language_tool.correct(punctuated)
+            
+            # Remove filler words that LanguageTool might miss
+            fillers = ['um,', 'uh,', 'like,', 'you know,', 'i mean,', 'basically,', 
+                       'actually,', 'literally,', 'so,', 'well,', 'right,', 'okay,',
+                       ' um ', ' uh ', ' like ', ' you know ', ' i mean ', 
+                       ' basically ', ' actually ', ' literally ', ' right ', ' okay ']
+            
+            result = corrected
+            for filler in fillers:
+                result = re.sub(filler, ' ', result, flags=re.IGNORECASE)
+            
+            # Clean up extra spaces
+            result = re.sub(r'\s+', ' ', result).strip()
+            
+            return result if result else punctuated
+            
+        except Exception as e:
+            print(f"[WARNING] LanguageTool error: {e}")
+            return punctuated
+
+    def process_rephrase(self, text):
+        """Process text with rephrase tone"""
+        punctuated = self.add_punctuation(text)
+        return self.call_ollama(punctuated, "rephrase")
+
+    def call_ollama(self, text, mode):
+        """Call Ollama with appropriate prompt based on mode"""
+        try:
+            import ollama
+
+            if mode == "professional":
+                system_prompt = """You are a professional transcription editor. Clean up transcribed speech by fixing grammar, removing filler words, and simplifying while keeping the core meaning.
+
+Rules:
+1. Remove filler words: um, uh, like, you know, I mean, basically, actually, literally, so, well, right, okay
+2. Fix grammar and spelling errors
+3. Add proper punctuation where needed
+4. Simplify the text - make it concise and straightforward
+5. Remove redundant or repetitive phrases
+6. Keep the original meaning intact
+7. Do not add explanations or comments
+8. Output ONLY the cleaned text, nothing else
+
+Example:
+Input: "Um, so like I was thinking that maybe we should uh go to the store"
+Output: "We should go to the store."""
+            elif mode == "polite":
+                system_prompt = """You are a professional communication assistant. Convert the given text into polite, respectful, and courteous language suitable for formal or professional contexts.
+
+Rules:
+1. Remove filler words: um, uh, like, you know, I mean, basically, actually, literally, so, well, right, okay
+2. Use polite phrases: "would you mind," "could you please," "I would appreciate if," "thank you for"
+3. Soften direct commands into requests
+4. Add courteous openings and closings where appropriate
+5. Use formal vocabulary instead of casual expressions
+6. Maintain the original intent but express it respectfully
+7. Do not add explanations or comments
+8. Output ONLY the polite version, nothing else
+
+Example:
+Input: "Send me the report by tomorrow"
+Output: "Would you mind sending me the report by tomorrow? Thank you."
+
+Input: "I need you to fix this bug now"
+Output: "Could you please look into this bug when you have a moment? I would appreciate your help."""
+            else:  # rephrase
+                system_prompt = """You are a skilled writer who rephrases text for maximum clarity and impact. Rewrite the given text to make it clearer, more concise, and better structured.
+
+Rules:
+1. Rephrase sentences for better flow and readability
+2. Use clearer and more precise vocabulary
+3. Restructure awkward phrasing
+4. Keep the original meaning but express it better
+5. Vary sentence structure to make it more engaging
+6. Remove redundancy and wordiness
+7. Do not add explanations or comments
+8. Output ONLY the rephrased text, nothing else
+
+Example:
+Input: "I was thinking that maybe we should consider going to the store because we need some milk"
+Output: "Let's head to the store; we're out of milk."
+
+Input: "The reason why I'm late is because there was a lot of traffic on the road"
+Output: "Traffic delayed my arrival."""
+
+            print(f"[OLLAMA] Sending to {self.ollama_model} ({mode} mode)...")
+            client = ollama.Client(host=self.ollama_host)
+            response = client.chat(
+                model=self.ollama_model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Text to process:\n\n{text}"},
+                ],
+                options={
+                    "temperature": 0.3 if mode == "professional" else 0.5,
+                    "num_predict": 300,
+                },
+            )
+
+            result = response.message.content.strip()
+            result = re.sub(r'^["\']+|["\']+$', '', result)
+            result = result.strip()
+            return result if result else text
+
+        except Exception as e:
+            print(f"[WARNING] Ollama call failed: {e}")
+            return text
+
     def insert_text(self, text):
         """Insert text at cursor"""
         try:
             pyperclip.copy(text)
             pyautogui.typewrite(text, interval=0.001)
             print(f"[OK] Inserted: {text}")
-            self.after(500, lambda: [
-                self.record_button.configure(text="🎙", fg_color="#6200EE"),
-                self.status_label.configure(text="Ready", text_color="#888888"),
-            ])
+            self.after(500, lambda: self.record_button.configure(text="🎙", fg_color="#6200EE"))
         except Exception as e:
             print(f"Insert error: {e}")
             self.record_button.configure(text="🎙", fg_color="#6200EE")
-            self.status_label.configure(text="Ready", text_color="#888888")
 
     def cleanup(self):
         """Clean up resources"""
@@ -417,6 +635,6 @@ except Exception as e:
 
 
 if __name__ == "__main__":
-    app = SimpleApp()
+    app = SettingsApp()
     app.protocol("WM_DELETE_WINDOW", app.on_closing)
     app.mainloop()
