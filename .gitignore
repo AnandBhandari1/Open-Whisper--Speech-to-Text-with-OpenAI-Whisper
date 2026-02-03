@@ -37,6 +37,11 @@ uv.lock
 *.swo
 *~
 
+# AI Assistant folders
+.claude/
+.serena/
+.trae/
+
 # OS
 .DS_Store
 Thumbs.db
