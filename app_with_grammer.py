@@ -38,7 +38,7 @@ except Exception as e:
 import whisper  # Import after setting up ffmpeg
 
 
-class GrammarApp(ctk.CTk):
+class VoiceTypeAI_Grammar(ctk.CTk):
     def __init__(self):
         super().__init__()
 
@@ -504,6 +504,6 @@ Output: "We should go to the store."""
 
 
 if __name__ == "__main__":
-    app = GrammarApp()
+    app = VoiceTypeAI_Grammar()
     app.protocol("WM_DELETE_WINDOW", app.on_closing)
     app.mainloop()

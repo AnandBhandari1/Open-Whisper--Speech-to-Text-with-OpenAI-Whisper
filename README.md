@@ -1,12 +1,14 @@
-# WhisperTalk 🎤
+# VoiceType AI 🎤
 
-**Simple, Fast Speech-to-Text with OpenAI Whisper**
+**AI-Powered Speech-to-Text with Grammar Correction & Multiple Tones**
 
-A lightweight, GPU-accelerated speech recognition application that transcribes your voice and automatically inserts text at your cursor position. Built with OpenAI Whisper for high-quality transcription.
+A lightweight, GPU-accelerated speech recognition application that transcribes your voice and automatically inserts text at your cursor position. Features AI-powered grammar correction, multiple writing tones, and smart text processing using OpenAI Whisper, Ollama, and LanguageTool.
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![uv](https://img.shields.io/badge/uv-package%20manager-blue)](https://github.com/astral-sh/uv)
+[![Whisper](https://img.shields.io/badge/Whisper-OpenAI-green)](https://github.com/openai/whisper)
+[![Ollama](https://img.shields.io/badge/Ollama-Local%20AI-purple)](https://ollama.com)
 
 ---
 
@@ -14,11 +16,13 @@ A lightweight, GPU-accelerated speech recognition application that transcribes y
 
 - 🎯 **Global Hotkey** - Press `F8` from anywhere to start/stop recording
 - 🚀 **GPU Acceleration** - Automatic CUDA support for fast transcription (with CPU fallback)
-- 📊 **Real-time Waveform** - Visual feedback with animated waveform bars
+- ✍️ **AI Grammar Correction** - Fix grammar, remove filler words using Ollama or LanguageTool
+- 🎨 **Multiple Writing Tones** - Choose from Original, Grammar, Professional, Polite, or Rephrase
 - ⚡ **Instant Text Insertion** - Transcribed text appears automatically at cursor
-- 🎨 **Modern UI** - Clean, draggable floating window
+- 🖥️ **Compact UI** - Clean, rectangular floating window with tone selection dropdown
 - 🧠 **Smart Punctuation** - Automatically adds punctuation and capitalization
-- 🖥️ **Cross-Platform** - Works on X11 and Wayland (Linux)
+- 🏠 **Local Processing** - All AI processing happens locally (no cloud required)
+- 🎛️ **Three App Variants** - Choose the version that fits your workflow
 - 📦 **One-Click Setup** - Simple installation with automated dependency management
 
 ---
@@ -30,6 +34,8 @@ A lightweight, GPU-accelerated speech recognition application that transcribes y
 - **Python** 3.10 or higher
 - **ffmpeg** for audio processing
 - **NVIDIA GPU** (optional, for GPU acceleration)
+- **Java** (optional, for LanguageTool grammar correction)
+- **Ollama** (optional, for AI tone processing)
 
 ### Installation
 
@@ -63,8 +69,18 @@ A lightweight, GPU-accelerated speech recognition application that transcribes y
    - Verify GPU support
 
 4. **Launch the app**
+   
+   Choose the version that fits your needs:
+   
    ```bash
+   # Basic version - punctuation only
    ./run.sh
+   
+   # OR grammar correction via Ollama
+   ./run_grammer.sh
+   
+   # OR full version with tone selection dropdown
+   ./run_with_settings.sh
    ```
 
 ---
@@ -79,28 +95,85 @@ A lightweight, GPU-accelerated speech recognition application that transcribes y
 - Press `F8` again to stop and transcribe
 
 **Method 2: App Button**
-- Click the "Record" button in the app window
+- Click the "🎙" button in the app window
 - Speak into your microphone
-- Click "Stop" to transcribe
+- Click "⏹" to stop and transcribe
 
-### Understanding the Status
+### Understanding the Tones
 
-| Status | Meaning |
-|--------|---------|
-| **Loading...** | Model is loading (wait 10-30 seconds on first start) |
-| **Ready • GPU/CPU** | Ready to record |
-| **Recording...** | Currently recording (waveform active) |
-| **Processing...** | Saving audio file |
-| **Transcribing...** | Converting speech to text |
-| **Adding punctuation...** | Formatting text |
-| **Inserting...** | Typing text at cursor |
-| **Inserted!** | Done! |
+| Tone | Description | Requirements |
+|------|-------------|--------------|
+| **Original** | Just punctuation and capitalization | None |
+| **Grammar** | Fast grammar correction + filler word removal | LanguageTool (Java) |
+| **Professional** | Grammar fix + simplify + concise writing | Ollama |
+| **Polite** | Convert to courteous, formal language | Ollama |
+| **Rephrase** | Complete rewording for clarity | Ollama |
+
+### Setting Up Ollama (for Professional/Polite/Rephrase tones)
+
+1. **Install Ollama**
+   ```bash
+   curl -fsSL https://ollama.com/install.sh | sh
+   ```
+
+2. **Pull a model**
+   ```bash
+   ollama pull gemma3:latest
+   # or
+   ollama pull llama3.2:3b
+   ```
+
+3. **Start Ollama**
+   ```bash
+   ollama serve
+   ```
 
 ### Window Controls
 
 - **Drag** - Click and drag anywhere on the window to move it
+- **Dropdown** - Select your preferred tone from the dropdown
 - **Always on Top** - Window stays visible above other apps
 - **Close** - Click X or use Alt+F4
+
+---
+
+## 🎛️ Three App Variants
+
+### 1. Original (`app.py` / `run.sh`)
+Basic speech-to-text with smart punctuation.
+
+**Best for:** Quick transcription without AI processing
+
+**Features:**
+- Speech-to-text with Whisper
+- Automatic punctuation
+- Capitalization
+- Global hotkey (F8)
+
+### 2. Grammar (`app_with_grammer.py` / `run_grammer.sh`)
+Grammar correction via Ollama with automatic fallback.
+
+**Best for:** Users who want consistent grammar correction
+
+**Features:**
+- All Original features
+- Grammar correction via Ollama
+- Filler word removal (um, uh, like, etc.)
+- Falls back to punctuation-only if Ollama unavailable
+
+### 3. Settings (`app_with_settings.py` / `run_with_settings.sh`)
+Full-featured version with tone selection dropdown.
+
+**Best for:** Users who want flexibility in writing styles
+
+**Features:**
+- All Grammar features
+- **5 Tones selectable via dropdown:**
+  - **Original** - Punctuation only (fastest, no AI)
+  - **Grammar** - Fast local grammar correction (LanguageTool)
+  - **Professional** - Grammar + simplify (Ollama)
+  - **Polite** - Courteous formal language (Ollama)
+  - **Rephrase** - Complete rewording (Ollama)
 
 ---
 
@@ -116,7 +189,7 @@ FORCE_CPU=1 ./run.sh
 
 ### Change Whisper Model
 
-Edit `app.py` line 101 to change the model:
+Edit the app file to change the model:
 
 ```python
 self.model_name = "large-v3-turbo"  # or "medium", "small", "base"
@@ -129,6 +202,17 @@ self.model_name = "large-v3-turbo"  # or "medium", "small", "base"
 - `small` - Faster, lower quality (~500MB)
 - `base` - Fastest, lowest quality (~150MB)
 
+### Change Ollama Model
+
+Set via environment variable:
+
+```bash
+export OLLAMA_MODEL="llama3.2:3b"
+./run_with_settings.sh
+```
+
+Default is `gemma3:latest`.
+
 ### Wayland Setup (GNOME/KDE)
 
 On Wayland, the F8 hotkey requires system configuration:
@@ -136,7 +220,7 @@ On Wayland, the F8 hotkey requires system configuration:
 1. Open **Settings** → **Keyboard** → **Keyboard Shortcuts**
 2. Click **Add Shortcut** or **+**
 3. Configure:
-   - **Name**: `FastSimple Toggle`
+   - **Name**: `VoiceType Toggle`
    - **Command**: `python3 /tmp/faststt_toggle.py`
    - **Shortcut**: Press `F8`
 4. Click **Add** or **Save**
@@ -194,23 +278,33 @@ sudo apt install nvidia-cuda-toolkit
 FORCE_CPU=1 ./run.sh
 ```
 
+### LanguageTool not working (Grammar tone)
+
+**Error:** "LanguageTool not available"
+
+**Solution:** Install Java
+```bash
+# Ubuntu/Debian
+sudo apt install default-jre
+
+# Fedora
+sudo dnf install java-latest-openjdk
+```
+
+### Ollama not working (Professional/Polite/Rephrase tones)
+
+**Error:** "Ollama not available"
+
+**Solutions:**
+1. Make sure Ollama is running: `ollama serve`
+2. Check if model is pulled: `ollama list`
+3. Pull a model: `ollama pull gemma3:latest`
+
 ### Text not inserting
 
 **Fallback method:**
 - The app copies text to clipboard automatically
 - Paste manually with `Ctrl+V` (or `Ctrl+Shift+V` in terminals)
-
-### Dependencies installation fails
-
-**Try manual sync:**
-```bash
-uv sync --verbose
-```
-
-**Check Python version:**
-```bash
-python3 --version  # Should be 3.10 or higher
-```
 
 ---
 
@@ -224,12 +318,12 @@ python3 --version  # Should be 3.10 or higher
 - **Memory**: 4GB RAM minimum (8GB recommended)
 - **Storage**: 5GB free space (for models and dependencies)
 
-### Optional (for GPU acceleration)
+### Optional (for enhanced features)
 
-- **GPU**: NVIDIA GPU with CUDA support
+- **GPU**: NVIDIA GPU with CUDA support (for faster transcription)
 - **VRAM**: 4GB+ recommended for large models
-- **CUDA**: 11.8 or higher
-- **Driver**: NVIDIA driver 520+
+- **Java**: For LanguageTool grammar correction
+- **Ollama**: For AI-powered tone processing
 
 ### Tested On
 
@@ -245,14 +339,22 @@ python3 --version  # Should be 3.10 or higher
 
 ```
 fast_simple/
-├── app.py              # Main application
-├── pyproject.toml      # Dependencies configuration
-├── setup.sh            # One-click setup script
-├── run.sh              # Launch script
-├── README.md           # This file
-├── LICENSE             # MIT License
-├── .gitignore          # Git ignore rules
-└── .env.example        # Environment variables template
+├── app.py                   # Original: Basic speech-to-text
+├── app_with_grammer.py      # Grammar: Ollama grammar correction
+├── app_with_settings.py     # Settings: Full version with tone dropdown
+├── pyproject.toml           # Dependencies configuration
+├── setup.sh                 # One-click setup script (Linux/Mac)
+├── setup.bat                # One-click setup script (Windows)
+├── run.sh                   # Launch Original version
+├── run_grammer.sh           # Launch Grammar version
+├── run_with_settings.sh     # Launch Settings version
+├── run.bat                  # Windows launcher
+├── run_grammer.bat          # Windows Grammar launcher
+├── run_with_settings.bat    # Windows Settings launcher
+├── README.md                # This file
+├── LICENSE                  # MIT License
+├── .gitignore               # Git ignore rules
+└── .env.example             # Environment variables template
 ```
 
 ---
@@ -260,6 +362,8 @@ fast_simple/
 ## 🧰 Tech Stack
 
 - **[OpenAI Whisper](https://github.com/openai/whisper)** - Speech recognition
+- **[Ollama](https://ollama.com)** - Local AI for grammar and tone processing
+- **[LanguageTool](https://languagetool.org)** - Fast local grammar correction
 - **[PyTorch](https://pytorch.org/)** - Deep learning framework
 - **[CustomTkinter](https://github.com/TomSchimansky/CustomTkinter)** - Modern UI framework
 - **[sounddevice](https://python-sounddevice.readthedocs.io/)** - Audio I/O
@@ -287,6 +391,8 @@ dependencies = [
     "pyautogui",
     "pyperclip",
     "numpy",
+    "ollama",              # For AI tone processing
+    "language-tool-python", # For fast grammar correction
 ]
 ```
 
@@ -300,17 +406,17 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync
 
 # Run directly
-uv run python app.py
+uv run python app_with_settings.py
 ```
 
 ### Running in Development Mode
 
 ```bash
 # Enable verbose logging
-uv run python app.py --verbose
+uv run python app_with_settings.py --verbose
 
 # Force CPU mode for testing
-FORCE_CPU=1 uv run python app.py
+FORCE_CPU=1 uv run python app_with_settings.py
 ```
 
 ---
@@ -332,6 +438,7 @@ Contributions are welcome! Here's how you can help:
 - 📚 Documentation improvements
 - 🌍 Platform support (macOS, Windows)
 - 🎨 UI/UX enhancements
+- 🔊 Audio processing improvements
 
 ---
 
@@ -344,6 +451,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Credits
 
 - **OpenAI Whisper** - Speech recognition model
+- **Ollama** - Local AI inference
+- **LanguageTool** - Grammar correction engine
 - **Astral** - uv package manager
 - All the amazing open-source contributors
 
@@ -363,7 +472,6 @@ If you find this project useful, please consider giving it a star! ⭐
 ---
 
 <div align="center">
-
 
 [Report Bug](https://github.com/AnandBhandari1/fast_simple/issues) · [Request Feature](https://github.com/AnandBhandari1/fast_simple/issues)
 
