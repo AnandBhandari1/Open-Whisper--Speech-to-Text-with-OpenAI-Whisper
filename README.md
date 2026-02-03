@@ -1,6 +1,10 @@
-# VoiceType AI 🎤
+# <img src="logo.png" width="48" align="center"> VoiceType AI 🎤
 
 **AI-Powered Speech-to-Text with Grammar Correction & Multiple Tones**
+
+![Demo](demo.gif)
+
+---
 
 A lightweight, GPU-accelerated speech recognition application that transcribes your voice and automatically inserts text at your cursor position. Features AI-powered grammar correction, multiple writing tones, and smart text processing using OpenAI Whisper, Ollama, and LanguageTool.
 
