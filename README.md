@@ -1,12 +1,10 @@
-# <img src="logo.png" width="48" align="center"> VoiceType AI 🎤
+# <img src="logo.png" width="48" align="center"> FastSimple 🎤
 
 **AI-Powered Speech-to-Text with Grammar Correction & Multiple Tones**
 
-![Demo](demo.gif)
-
----
-
 A lightweight, GPU-accelerated speech recognition application that transcribes your voice and automatically inserts text at your cursor position. Features AI-powered grammar correction, multiple writing tones, and smart text processing using OpenAI Whisper, Ollama, and LanguageTool.
+
+![Demo](demo.gif)
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -27,6 +25,7 @@ A lightweight, GPU-accelerated speech recognition application that transcribes y
 - 🧠 **Smart Punctuation** - Automatically adds punctuation and capitalization
 - 🏠 **Local Processing** - All AI processing happens locally (no cloud required)
 - 🎛️ **Three App Variants** - Choose the version that fits your workflow
+- 🪟 **Windows Support** - Full Windows integration with batch files
 - 📦 **One-Click Setup** - Simple installation with automated dependency management
 
 ---
@@ -36,12 +35,36 @@ A lightweight, GPU-accelerated speech recognition application that transcribes y
 ### Prerequisites
 
 - **Python** 3.10 or higher
-- **ffmpeg** for audio processing
+- **ffmpeg** for audio processing (bundled on Windows)
 - **NVIDIA GPU** (optional, for GPU acceleration)
 - **Java** (optional, for LanguageTool grammar correction)
 - **Ollama** (optional, for AI tone processing)
 
 ### Installation
+
+#### Windows
+
+1. **Clone the repository**
+   ```powershell
+   git clone https://github.com/AnandBhandari1/fast_simple.git
+   cd fast_simple
+   ```
+
+2. **Run setup**
+   ```powershell
+   setup.bat
+   ```
+
+3. **Launch the app**
+   ```powershell
+   run.bat              # Original version
+   # or
+   run_grammer.bat      # Grammar correction via Ollama
+   # or
+   run_with_settings.bat  # Full version with tone dropdown
+   ```
+
+#### Linux/Mac
 
 1. **Clone the repository**
    ```bash
@@ -61,30 +84,18 @@ A lightweight, GPU-accelerated speech recognition application that transcribes y
    sudo pacman -S ffmpeg
    ```
 
-3. **Run setup script**
+3. **Run setup**
    ```bash
    ./setup.sh
    ```
 
-   This will:
-   - Install `uv` package manager (if needed)
-   - Check system requirements
-   - Install Python dependencies (~3GB download for Whisper models)
-   - Verify GPU support
-
 4. **Launch the app**
-   
-   Choose the version that fits your needs:
-   
    ```bash
-   # Basic version - punctuation only
-   ./run.sh
-   
-   # OR grammar correction via Ollama
-   ./run_grammer.sh
-   
-   # OR full version with tone selection dropdown
-   ./run_with_settings.sh
+   ./run.sh              # Original version
+   # or
+   ./run_grammer.sh      # Grammar correction via Ollama
+   # or
+   ./run_with_settings.sh  # Full version with tone dropdown
    ```
 
 ---
@@ -117,7 +128,10 @@ A lightweight, GPU-accelerated speech recognition application that transcribes y
 
 1. **Install Ollama**
    ```bash
+   # Linux/Mac
    curl -fsSL https://ollama.com/install.sh | sh
+   
+   # Windows - download from https://ollama.com
    ```
 
 2. **Pull a model**
@@ -135,7 +149,7 @@ A lightweight, GPU-accelerated speech recognition application that transcribes y
 ### Window Controls
 
 - **Drag** - Click and drag anywhere on the window to move it
-- **Dropdown** - Select your preferred tone from the dropdown
+- **Dropdown** - Select your preferred tone from the dropdown (Settings version)
 - **Always on Top** - Window stays visible above other apps
 - **Close** - Click X or use Alt+F4
 
@@ -143,7 +157,7 @@ A lightweight, GPU-accelerated speech recognition application that transcribes y
 
 ## 🎛️ Three App Variants
 
-### 1. Original (`app.py` / `run.sh`)
+### 1. Original (`app.py` / `run.bat` / `run.sh`)
 Basic speech-to-text with smart punctuation.
 
 **Best for:** Quick transcription without AI processing
@@ -154,7 +168,7 @@ Basic speech-to-text with smart punctuation.
 - Capitalization
 - Global hotkey (F8)
 
-### 2. Grammar (`app_with_grammer.py` / `run_grammer.sh`)
+### 2. Grammar (`app_with_grammer.py` / `run_grammer.bat` / `run_grammer.sh`)
 Grammar correction via Ollama with automatic fallback.
 
 **Best for:** Users who want consistent grammar correction
@@ -165,7 +179,7 @@ Grammar correction via Ollama with automatic fallback.
 - Filler word removal (um, uh, like, etc.)
 - Falls back to punctuation-only if Ollama unavailable
 
-### 3. Settings (`app_with_settings.py` / `run_with_settings.sh`)
+### 3. Settings (`app_with_settings.py` / `run_with_settings.bat` / `run_with_settings.sh`)
 Full-featured version with tone selection dropdown.
 
 **Best for:** Users who want flexibility in writing styles
@@ -181,12 +195,45 @@ Full-featured version with tone selection dropdown.
 
 ---
 
+## 🪟 Windows Integration
+
+FastSimple includes full Windows support:
+
+### Batch Files
+
+| File | Purpose |
+|------|---------|
+| `setup.bat` | Install dependencies and configure environment |
+| `setup_cuda.bat` | Setup with CUDA GPU support |
+| `run.bat` | Launch Original version |
+| `run_grammer.bat` | Launch Grammar version |
+| `run_with_settings.bat` | Launch Settings version |
+| `run_win.bat` | Alternative Windows launcher |
+| `create_shortcuts.bat` | Create desktop shortcuts |
+| `remove_shortcuts.bat` | Remove desktop shortcuts |
+| `start.bat` | Quick start script |
+
+### Windows Shortcuts
+
+Run `create_shortcuts.bat` to add FastSimple to your desktop with automatic F8 hotkey integration.
+
+See [WINDOWS_INTEGRATION.md](WINDOWS_INTEGRATION.md) for detailed Windows setup instructions.
+
+---
+
 ## ⚙️ Configuration
 
 ### Force CPU Mode
 
 If you want to disable GPU and use CPU only:
 
+**Windows:**
+```powershell
+set FORCE_CPU=1
+run.bat
+```
+
+**Linux/Mac:**
 ```bash
 FORCE_CPU=1 ./run.sh
 ```
@@ -210,6 +257,13 @@ self.model_name = "large-v3-turbo"  # or "medium", "small", "base"
 
 Set via environment variable:
 
+**Windows:**
+```powershell
+set OLLAMA_MODEL=llama3.2:3b
+run_with_settings.bat
+```
+
+**Linux/Mac:**
 ```bash
 export OLLAMA_MODEL="llama3.2:3b"
 ./run_with_settings.sh
@@ -217,14 +271,14 @@ export OLLAMA_MODEL="llama3.2:3b"
 
 Default is `gemma3:latest`.
 
-### Wayland Setup (GNOME/KDE)
+### Wayland Setup (Linux GNOME/KDE)
 
 On Wayland, the F8 hotkey requires system configuration:
 
 1. Open **Settings** → **Keyboard** → **Keyboard Shortcuts**
 2. Click **Add Shortcut** or **+**
 3. Configure:
-   - **Name**: `VoiceType Toggle`
+   - **Name**: `FastSimple Toggle`
    - **Command**: `python3 /tmp/faststt_toggle.py`
    - **Shortcut**: Press `F8`
 4. Click **Add** or **Save**
@@ -244,14 +298,14 @@ The app will create the toggle script automatically on first run.
 **Possible causes:**
 - Microphone not set as default input
 - Missing microphone permissions
-- PulseAudio/PipeWire issues
+- PulseAudio/PipeWire issues (Linux)
 
 **Solutions:**
 ```bash
 # Check available audio devices
 python -c "import sounddevice; print(sounddevice.query_devices())"
 
-# Test microphone
+# Test microphone (Linux)
 arecord -d 3 test.wav && aplay test.wav
 ```
 
@@ -265,6 +319,10 @@ arecord -d 3 test.wav && aplay test.wav
 - Follow the Wayland setup instructions above
 - Or use the in-app Record button
 
+**On Windows:**
+- Run as Administrator if hotkey doesn't work
+- Check if another app is using F8
+
 ### GPU not detected
 
 **Check NVIDIA drivers:**
@@ -274,7 +332,10 @@ nvidia-smi
 
 **Install CUDA toolkit (if needed):**
 ```bash
+# Ubuntu/Debian
 sudo apt install nvidia-cuda-toolkit
+
+# Windows - download from NVIDIA website
 ```
 
 **Use CPU mode as fallback:**
@@ -293,6 +354,8 @@ sudo apt install default-jre
 
 # Fedora
 sudo dnf install java-latest-openjdk
+
+# Windows - download from https://java.com
 ```
 
 ### Ollama not working (Professional/Polite/Rephrase tones)
@@ -316,9 +379,8 @@ sudo dnf install java-latest-openjdk
 
 ### Required
 
-- **OS**: Linux (Ubuntu 20.04+, Fedora 35+, Arch, etc.)
+- **OS**: Windows 10/11, Linux (Ubuntu 20.04+, Fedora 35+, Arch, etc.), macOS
 - **Python**: 3.10 or higher
-- **ffmpeg**: Audio codec support
 - **Memory**: 4GB RAM minimum (8GB recommended)
 - **Storage**: 5GB free space (for models and dependencies)
 
@@ -326,11 +388,13 @@ sudo dnf install java-latest-openjdk
 
 - **GPU**: NVIDIA GPU with CUDA support (for faster transcription)
 - **VRAM**: 4GB+ recommended for large models
+- **ffmpeg**: Audio codec support (bundled on Windows)
 - **Java**: For LanguageTool grammar correction
 - **Ollama**: For AI-powered tone processing
 
 ### Tested On
 
+- ✅ Windows 10 / 11
 - ✅ Ubuntu 22.04 / 24.04
 - ✅ Pop!_OS 22.04
 - ✅ Fedora 39 / 40
@@ -343,22 +407,37 @@ sudo dnf install java-latest-openjdk
 
 ```
 fast_simple/
-├── app.py                   # Original: Basic speech-to-text
-├── app_with_grammer.py      # Grammar: Ollama grammar correction
-├── app_with_settings.py     # Settings: Full version with tone dropdown
-├── pyproject.toml           # Dependencies configuration
-├── setup.sh                 # One-click setup script (Linux/Mac)
-├── setup.bat                # One-click setup script (Windows)
-├── run.sh                   # Launch Original version
-├── run_grammer.sh           # Launch Grammar version
-├── run_with_settings.sh     # Launch Settings version
-├── run.bat                  # Windows launcher
-├── run_grammer.bat          # Windows Grammar launcher
-├── run_with_settings.bat    # Windows Settings launcher
-├── README.md                # This file
-├── LICENSE                  # MIT License
-├── .gitignore               # Git ignore rules
-└── .env.example             # Environment variables template
+├── app.py                      # Original: Basic speech-to-text
+├── app_with_grammer.py         # Grammar: Ollama grammar correction
+├── app_with_settings.py        # Settings: Full version with tone dropdown
+├── pyproject.toml              # Dependencies configuration
+├── setup.sh                    # Setup script (Linux/Mac)
+├── setup.bat                   # Setup script (Windows)
+├── setup_cuda.bat              # Setup with CUDA (Windows)
+├── run.sh                      # Launch Original (Linux/Mac)
+├── run.bat                     # Launch Original (Windows)
+├── run_grammer.sh              # Launch Grammar (Linux/Mac)
+├── run_grammer.bat             # Launch Grammar (Windows)
+├── run_with_settings.sh        # Launch Settings (Linux/Mac)
+├── run_with_settings.bat       # Launch Settings (Windows)
+├── run_win.bat                 # Alternative Windows launcher
+├── start.bat                   # Quick start (Windows)
+├── create_shortcuts.bat        # Create desktop shortcuts (Windows)
+├── remove_shortcuts.bat        # Remove desktop shortcuts (Windows)
+├── find_paths.bat              # Path configuration (Windows)
+├── ffmpeg.exe                  # Bundled ffmpeg (Windows)
+├── logo.png                    # App logo
+├── demo.gif                    # Demo animation
+├── README.md                   # This file
+├── WINDOWS_SETUP.md            # Windows-specific setup guide
+├── WINDOWS_INTEGRATION.md      # Windows integration docs
+├── QUICKSTART.md               # Quick start guide
+├── CONTRIBUTING.md             # Contribution guidelines
+├── SETUP_HISTORY.md            # Setup history log
+├── FILES.md                    # File descriptions
+├── LICENSE                     # MIT License
+├── .gitignore                  # Git ignore rules
+└── .env.example                # Environment variables template
 ```
 
 ---
@@ -395,8 +474,9 @@ dependencies = [
     "pyautogui",
     "pyperclip",
     "numpy",
-    "ollama",              # For AI tone processing
-    "language-tool-python", # For fast grammar correction
+    "imageio-ffmpeg",
+    "ollama",                   # For AI tone processing
+    "language-tool-python",     # For fast grammar correction
 ]
 ```
 
@@ -411,16 +491,6 @@ uv sync
 
 # Run directly
 uv run python app_with_settings.py
-```
-
-### Running in Development Mode
-
-```bash
-# Enable verbose logging
-uv run python app_with_settings.py --verbose
-
-# Force CPU mode for testing
-FORCE_CPU=1 uv run python app_with_settings.py
 ```
 
 ---
@@ -440,9 +510,10 @@ Contributions are welcome! Here's how you can help:
 - 🐛 Bug fixes
 - ✨ New features (language selection, custom hotkeys, etc.)
 - 📚 Documentation improvements
-- 🌍 Platform support (macOS, Windows)
 - 🎨 UI/UX enhancements
 - 🔊 Audio processing improvements
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ---
 

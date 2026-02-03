@@ -38,7 +38,7 @@ except Exception as e:
 import whisper  # Import after setting up ffmpeg
 
 
-class VoiceTypeAI_Original(ctk.CTk):
+class SimpleApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
@@ -417,6 +417,6 @@ except Exception as e:
 
 
 if __name__ == "__main__":
-    app = VoiceTypeAI_Original()
+    app = SimpleApp()
     app.protocol("WM_DELETE_WINDOW", app.on_closing)
     app.mainloop()

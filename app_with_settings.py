@@ -38,7 +38,7 @@ except Exception as e:
 import whisper  # Import after setting up ffmpeg
 
 
-class VoiceTypeAI_Settings(ctk.CTk):
+class SettingsApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
@@ -635,6 +635,6 @@ Output: "Traffic delayed my arrival."""
 
 
 if __name__ == "__main__":
-    app = VoiceTypeAI_Settings()
+    app = SettingsApp()
     app.protocol("WM_DELETE_WINDOW", app.on_closing)
     app.mainloop()
